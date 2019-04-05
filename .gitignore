@@ -1,0 +1,5 @@
+# 無視するファイルを指定
+
+result/
+
+/topology.py
