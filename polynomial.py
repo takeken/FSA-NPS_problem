@@ -251,45 +251,56 @@ def Bhandari():
     eta.append(modulation_decision(distance[node_num-1]))
     
 
-def make_list(b,hop,N):
-  cost_ls = []
-  B_max = math.ceil(b/min(eta))    #パスに割り当てるスロット数の上限を定める
-  
-  #割り当てを全て書き出す。
-  Bk_ls = [a+1 for a in range(B_max)]
-  Bk_comb = list(itertools.product(Bk_ls, repeat=N))
-  
-  #各割り当て時の使用スペクトル資源をリスト化
-  for a in Bk_comb:
-    cost = 0
-    for k in range(N):
-      cost = a[k]*hop[k] + cost
-    cost_ls.append(cost)
-    
-  return cost_ls,Bk_comb
 
+# コストを計算
+def cal_cost(Bk,hop):
+  Bkhop = [x*y for (x,y) in zip(Bk,hop)]
+  cost = sum (Bkhop)
+  return cost
 
-#コスト順にソートした時のインデックスを取得
-def sort_list(cost_ls):
-  sort_index = sorted(range(len(cost_ls)), key=lambda k: cost_ls[k])
-  return sort_index
   
   
-#ソート後のインデックス順に要求を満たすか確認
-def check(a,Bk_comb,eta,N,b,M):
+
+#要求を満たすか確認
+def check(Bk,eta,N,b,rho,M):
   b_sum = 0
-  Bk = Bk_comb[a]
   
   bk = [Bk[k]*eta[k] for k in range(N)]
+  #print(Bk,bk)
   b_sum = sum(bk)   #通常時の伝送容量
-    
-  if b_sum < b:
-    return 0
+  
+  if b_sum < b or b_sum -  sum (sorted (bk, reverse = True)[:M]) < rho*b:  ##合計伝送容量が足りない or M本故障時の伝送容量
+    return 0      #故障時に耐えれない
   else:
-    if b_sum -  sum (sorted (bk, reverse = True)[:M]) < rho*b:  #M本故障時の伝送容量
-      return 0
-    else:
-      return 1
+    return 1  #トラヒック要求を満たす
+
+
+#割り当てを決める
+def allocation(Bk,eta,hop,N,b,rho,M,n):
+  global cost
+  global opt_Bk
+  if (n == N ):# ネストの最深部まできている場合
+    #for i in range(1, B_max+1):
+      #Bk[n] = i
+        
+    if check(Bk,eta,N,b,rho,M) == 1:   # Bkが要求を満たすか調べる
+      if cost >= cal_cost(Bk,hop):    # コストを比較し小さければ更新
+        cost = cal_cost(Bk,hop)
+        #print(cost,Bk)
+        opt_Bk = Bk
+        #print(Bk)
+        #print(cost)
+      return
+        
+    return
+  else:
+    for i in range(1, B_max+1):
+      Bk[n] = i
+      allocation(Bk,eta,hop,N,b,rho,M,n+1)
+    return
+            
+
+
     
     
 
@@ -325,23 +336,18 @@ if __name__ == "__main__":
       
       
       for b in T[0]:
-        cost_ls, Bk_comb = make_list(b,hop,N)
-        #print(cost_ls)
-        sort_index = sort_list(cost_ls)
-        #print(sort_index)
-        #print(len(cost_ls))
-        #print(Bk_comb[sort_index[1]])
+        B_max = math.ceil(b/min(eta))    #パスに割り当てるスロット数の上限を定める
+        Bk = [0] * N      #Bkの初期設定
         
-        for index in sort_index:
-
-          if check(index,Bk_comb,eta,N,b,1) == 1:
-            ans_index = index
-            break
+        cost = math.inf
+        
+        
+        allocation(Bk,eta,hop,N,b,rho,M,0)
         #print(ans_index)
         
-        print(Bk_comb[ans_index])
+        print(cost,opt_Bk)
         
-        ans = cost_ls[ans_index] + sum(hop)
+        ans = cost + sum(hop)
         print(ans)
         if Ans[0] > ans:
           Ans[0] = ans
