@@ -1,5 +1,7 @@
+# coding: UTF-8
+
 from __future__ import print_function
-import cplex
+#import cplex
 import sys
 import itertools
 import math
