@@ -6,14 +6,15 @@ import math
 import copy
 import csv
 import topology
+import time
 
 
 T = [
 [2000],#b
-[1], #M
-[0.5] #rho
+[2], #M
+[1] #rho
 ]
-r = '05'
+r = '1'
 
 b_len = len(T[0])
 #bandwidth requirement
@@ -348,7 +349,7 @@ if __name__ == "__main__":
     N = M+1 #the number of required disjoint paths
     Ans = [math.inf]*3
     print("(s,d)=",(s,d))
-    
+    start_time = time.time()
     while True:
       g = define_sd_pair(g,s,d)
       g2 = define_sd_pair(g2,s,d)
@@ -443,7 +444,7 @@ if __name__ == "__main__":
     overlapped_link = []
     negative_link = []
     linkset = []
-      
+    print("Solved in %s seconds." % (time.time() - start_time))
     print("optimize solution=", Ans)
     
     
