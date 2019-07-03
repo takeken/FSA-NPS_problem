@@ -12,7 +12,7 @@ import pulp
 from pulp import CPLEX_CMD
 
 # グラフの定義
-g = topology.test
+g = topology.COST239
 g_length = len(g)
 V = [a for a in range(g_length)] #ノードの集合
 E = [] #リンクの集合
@@ -22,11 +22,13 @@ for i in V:
             E.append((i,j))
 
 #要求の設定
-b = 1000 #要求伝送容量
-rho = 0.8 #partial protection requirement
+s = 0
+b = 2000 #要求伝送容量
+rho = 0.5 #partial protection requirement
+r = '05'
 M = 1 # 耐えうるパスの故障本数
 G = 1 # ガードバンドに必要なスロット数
-(s,d) = (0,4)
+
 
 # パスの長さのクラスわけ
 C = [0,1,2,3,4] #パスの長さのクラス
@@ -35,7 +37,7 @@ e_c = [62.5,50,37.5,25,12.5] # 変調効率
 
 
 alpha = 320
-opt_allocation = math.inf
+
 
 def fbar_set(K,N,M):
   F_bar = pulp.combination(K,N-M)
@@ -122,21 +124,38 @@ def rfsa_problem(N):
       print('z_' + str(k) +str(c) + ' = ' + str(pulp.value(z[(k,c)])))
   
   return total_slots
-  
+
+
+
+
 if __name__ == "__main__":
-  start_time = time.time()
-  N = M # M+1本からスタート
-  while 1 == True:
-    N += 1
+  for d in range(1,g_length):
+    print('(s,d) = ',(s,d))
+    opt_allocation = math.inf
     
-    total_slots = rfsa_problem(N)
-    if total_slots == None:
-      break
+    start_time = time.time()
+    N = M # M+1本からスタート
+    while True:
+      N += 1
+      
+      total_slots = rfsa_problem(N)
+      if total_slots == None:
+        break
+      else:
+        if opt_allocation > total_slots:
+          opt_allocation = total_slots
+    timer = time.time() - start_time
+    print('minimized required spectrum resource is ' + str(int(opt_allocation)))
+    
+    
+    Ans = [d+1,opt_allocation,timer]
+    if d == 1:
+      with open('result/rfsa'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','w') as f:
+          writer = csv.writer(f)
+          writer.writerow(Ans)
     else:
-      if opt_allocation > total_slots:
-        opt_allocation = total_slots
-  print("Solved in %s seconds." % (time.time() - start_time))
-  print('minimized required spectrum resource is ' + str(int(opt_allocation)))
-  
+      with open('result/rfsa'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','a') as f:
+          writer = csv.writer(f)
+          writer.writerow(Ans)
 
   
