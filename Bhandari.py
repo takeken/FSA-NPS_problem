@@ -8,10 +8,10 @@ import topology
 
 #networks topology
 
-map1 = topology.COST239
+map1 = topology.COST239_hop
 
 #topology's copy
-map2 = topology.COST239
+map2 = topology.COST239_hop
 
 
 g = copy.deepcopy(map1)
@@ -58,7 +58,7 @@ def get_target_min_index(min_index, distance, unsearched_nodes):
       start = index + 1
 
 
-def dijikstra(g,distance, unsearched_nodes, previous_nodes):
+def dijkstra(g,distance, unsearched_nodes, previous_nodes):
   
   while(len(unsearched_nodes) != 0): #until unsearched nodes = 0
     possible_min_distance = math.inf #set initial distance inf
@@ -101,7 +101,7 @@ def Bhandari():
   # g = define_sd_pair(G,s,d)
   # g2 = define_sd_pair(G2,s,d)
   
-  #first dijikstra
+  #first dijkstra
   unsearched_nodes = list(range(node_num))
   
   distance = [math.inf] * node_num
@@ -109,7 +109,7 @@ def Bhandari():
   
   previous_nodes = [-1] * node_num
   
-  dijikstra(g,distance, unsearched_nodes,previous_nodes)
+  dijkstra(g,distance, unsearched_nodes,previous_nodes)
   
   
     #make the length of each edges negative and print the path and the distance
@@ -140,7 +140,7 @@ def Bhandari():
   #print(g)
   count = 1
   while count < N: 
-    #dijikstra for the topology with nefative arcs
+    #dijkstra for the topology with nefative arcs
     unsearched_nodes = list(range(node_num))
     
     distance = [math.inf] * node_num
@@ -148,7 +148,7 @@ def Bhandari():
     
     previous_nodes = [-1] * node_num
     
-    dijikstra(g,distance, unsearched_nodes,previous_nodes)
+    dijkstra(g,distance, unsearched_nodes,previous_nodes)
     
     previous_node = node_num - 1
     present_node = node_num - 1
@@ -217,7 +217,7 @@ def Bhandari():
     
     previous_nodes = [-1] * node_num
     
-    dijikstra(g,distance, unsearched_nodes,previous_nodes)
+    dijkstra(g,distance, unsearched_nodes,previous_nodes)
     
     previous_node = node_num - 1
     present_node = node_num - 1
