@@ -23,7 +23,7 @@ node_num = len(map1)
 
 node =[a for a in range(node_num)]
 s_d = list(itertools.combinations(node,2))
-s_d = [(0,10)]
+s_d = [(0,9)]
 
 def dijkstra(g,s,d):
   S_bar =[] #list of neighbor nodes
@@ -82,4 +82,12 @@ if __name__ == "__main__":
     distance,predecessor = dijkstra(g,s,d)
     print(distance)
     print(predecessor)
+    p = d
+    while p != None:
+      if p != s:
+        print(str(p) + " <- ", end='')
+      else:
+        print(str(p))
+      p = predecessor[p]
+            
     
