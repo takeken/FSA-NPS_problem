@@ -15,8 +15,8 @@ s = 0
 b = 2000
 
 #partial protection requirement
-rho = 1
-r = '1'
+rho = 0.5
+r = '05'
 #number of failures
 M = 2
 #guardband
@@ -36,67 +36,63 @@ G1 = copy.deepcopy(map1_2)
 
 #the number of nodes
 node_num = len(g)
-
-
-#used path and shortestpath with negative arcs
-path = [[], []]
-
-overlapped_link = []
-negative_link = []
-linkset = []
+nodes =[a for a in range(node_num)]
 
 
 #slot assignment
 
-
-
-
-def define_sd_pair(g,s,d):
-  g[s],g[0] = g[0],g[s]
-  for a in g:
-    a[s],a[0] = a[0],a[s]
-  g[d],g[node_num-1] = g[node_num-1],g[d]
-  for a in g:
-    a[d],a[node_num-1] = a[node_num-1],a[d]
+def dijkstra(s,d):
+  S_bar =[] #list of neighbor nodes
+  predecessor = [None] * node_num
   
-  return g
-
-
-
-def get_target_min_index(min_index, hops, unsearched_nodes):
-  start = 0
+  # step 1
+  
+  hop_num = [math.inf] * node_num #hop_num of i from s
+  hop_num[s] = 0 #source node
+  for index in nodes:
+    if g[index][s] > 0:
+      hop_num[index] = g[index][s]
+      predecessor[index] = s
+      S_bar.append(index)
+  
   while True:
-    index = hops.index(min_index,start)
-    found = index in unsearched_nodes
-    if found:
-      return index
-    else:
-      start = index + 1
-
-
-def dijikstra(hops,distance,unsearched_nodes, previous_nodes):
-  
-  while(len(unsearched_nodes) != 0): #until unsearched nodes = 0
-    possible_min_hops = math.inf #set initial hops inf
     
-    for node_index in unsearched_nodes:
-      if possible_min_hops > hops[node_index]:
-        possible_min_hops = hops[node_index]
     
-    target_min_index = get_target_min_index(possible_min_hops, hops, unsearched_nodes)
+    # step 2
     
-    unsearched_nodes.remove(target_min_index) #remove a unsearched node
+    j = get_j(S_bar,hop_num)
+    if j == d:
+      break
+    #print('j =',j)
+    S_bar.remove(j)
     
-    target_edge = g[target_min_index]#list of edge from target node
     
-    for index, route_dis in enumerate(target_edge):
-      if route_dis != 0:
-        if hops[index] > (hops[target_min_index]) + route_dis:
+    
+    # step 3
+    # print(g[j])
+    for index in nodes:
+      if g[j][index] != 0:
+        
+        if hop_num[j] + g[index][j] < hop_num[index]:
+          hop_num[index] = hop_num[j] + g[j][index]
+          predecessor[index] = j
           
-          hops[index] = hops[target_min_index] + route_dis
-          distance[index] = distance[target_min_index] + G1[target_min_index][index]
-          previous_nodes[index] = target_min_index
+          if (j in S_bar) == False:
 
+            S_bar.append(index)
+    
+  return hop_num,predecessor
+    
+
+def get_j(S_bar,hop_num):
+  min_dis = math.inf
+  min_i = d
+  for index in S_bar:
+    if min_dis > hop_num[index]:
+      min_dis = hop_num[index]
+      min_i = index
+  return min_i
+  
 
 def modulation_decision(distance):
   if distance <= 250:#32-QAM
@@ -112,135 +108,92 @@ def modulation_decision(distance):
   else:#over reach
     return 0
 
+
 #Bhandari
 def Bhandari():
   
-  #first dijikstra
-  unsearched_nodes = list(range(node_num))
+  #first dijkstra
   
-  hops = [math.inf] * node_num
-  distance = [0] * node_num
-  hops[0] = 0
-  
-  previous_nodes = [-1] * node_num
-  
-  dijikstra(hops,distance, unsearched_nodes,previous_nodes)
-  
-  
-  #make the length of each edges negative and print the path and the hops
-  
-  previous_node = node_num - 1
-  present_node = node_num - 1
-  
-  while previous_node != -1:
-    if present_node != previous_node:
-      
-        g[present_node][previous_node] = - g[present_node][previous_node]  
-        g[previous_node][present_node] = 0
-        
-        link = {previous_node,present_node}
-        path[0].append(link)
-        
-        present_node = previous_node
-        
+  hop_num,predecessor = dijkstra(s,d)
+  # print(predecessor)
+  p = d
+  while p != None:
+    pre = predecessor[p]
+    if p != s:
+      g[p][pre] = - g[p][pre]
+      g[pre][p] = 0
+    p = pre
     
-    
-    previous_node = previous_nodes[previous_node]
-    
-
+  
+  #N-1 times dijkstra for the topology including negative arcs
+  
+  
   count = 1
   while count < N: 
-    #dijikstra for the topology with nefative arcs
-    unsearched_nodes = list(range(node_num))
-    
-    hops = [math.inf] * node_num
-    distance = [0] * node_num
-    hops[0] = 0
-    
-    previous_nodes = [-1] * node_num
-    
-    dijikstra(hops,distance,unsearched_nodes,previous_nodes)
-    
-    previous_node = node_num - 1
-    present_node = node_num - 1
-    
-    while previous_node != -1:
-      if present_node != previous_node:
+    hop_num,predecessor = dijkstra(s,d)
+    # print(predecessor)
+    p = d
+    while p != None:
+      pre = predecessor[p]
+      if p != s and pre != None:
         
-        g[present_node][previous_node] = - g[present_node][previous_node]  
-        g[previous_node][present_node] = 0
+        #replace the overlapping links with the original links
         
-        link = {previous_node,present_node}
-        path[1].append(link)
+        if g[pre][p] < 0:
+          g[pre][p] = g2[pre][p]
+          g[p][pre] = g2[p][pre]
         
-        present_node = previous_node
+        #make the length of each edges negative and print the path and the hop_num
+        
+        else:
+          g[p][pre] = - g[p][pre]
+          g[pre][p] = 0
+      p = pre
 
-      
-      previous_node = previous_nodes[previous_node]
-    
-    
-    #replace the overlapping links with the original links
-    overlapped_linkset = [a for a in path[0] if a in path[1]]
-    for a in overlapped_linkset:
-      a = list(a)
-      overlapped_link.append(a)
-      overlapped_link.append(a[::-1])
-    
-    for l in overlapped_link:
-      g[l[0]][l[1]] = g2[l[0]][l[1]]
-      
-    #get links that we should use
-    negative_link.extend([a for a in path[0] if a not in path[1]])
-    negative_link.extend([a for a in path[1] if a not in path[0]]) #xor
-    path[0] = negative_link
-    path[1] = []
-    
     count += 1
   
   
-  linkset = path[0]
+  #replace links we should use (negative arcs will be used)
+  for i in nodes:
+    for j in nodes:
+      if g[i][j] > 0:
+        g[i][j] = 0
+  for i in nodes:
+    for j in nodes:
+      if g[i][j] < 0:
+        g[i][j] = g2[i][j]
+        g[j][i] = g2[j][i]
   
   
-  #replace links we should use
-  for a in range(node_num):
-    for b in range(node_num):
-      g[a][b] = 0
-      for l in linkset:
-        if [a,b] == list(l):
-          g[a][b] = g2[a][b]
-        if [b,a] ==list(l):
-          g[a][b] = g2[a][b]
+  #get N disjoint paths
   
-  
-  
-  #get disjoint paths
   for a in range(N):
-    unsearched_nodes = list(range(node_num))
     
-    hops = [math.inf] * node_num
-    distance = [0] * node_num
-    hops[0] = 0
-    
-    previous_nodes = [-1] * node_num
-    
-    dijikstra(hops,distance,unsearched_nodes,previous_nodes)
-    
-    previous_node = node_num - 1
-    present_node = node_num - 1
+    hop_num,predecessor = dijkstra(s,d)
+    # print('hop_num = ',hop_num)
     hop_count = 0
-    while previous_node != -1:
-      if present_node != previous_node:
-        g[present_node][previous_node] = 0  
-        g[previous_node][present_node] = 0
-        present_node = previous_node
-
-
-      previous_node = previous_nodes[previous_node]
-      hop_count += 1
+    distance = 0
+    p = d
+    # print(predecessor)
+    while p != None:
+      pre = predecessor[p]
+      if p != s and pre != None:
+        g[p][pre] = 0
+        g[pre][p] = 0
+        
+        print(str(p) + " <- ", end='')
+        hop_count += 1
+        distance += G1[pre][p]
+      else:
+        print(str(p))
+        
+        
+      p = pre
+      
+    #print(g)
+    hop.append(hop_count)
     
-    hop.append(hop_count-1)
-    
-    eta.append(modulation_decision(distance[node_num-1]))
+    eta.append(modulation_decision(distance))
 
 
 
@@ -343,9 +296,6 @@ if __name__ == "__main__":
     print("(s,d)=",(s,d))
     start_time = time.time()
     while True:
-      g = define_sd_pair(g,s,d)
-      g2 = define_sd_pair(g2,s,d)
-      G1 = define_sd_pair(G1,s,d)
       hop = []
       eta = []
       #variables
@@ -358,10 +308,6 @@ if __name__ == "__main__":
       G1 = copy.deepcopy(map1_2)
 
       if 0 in hop:
-        path = [[], []]
-        overlapped_link = []
-        negative_link = []
-        linkset = []
         break
       
       print(str(N)+"本")
@@ -384,22 +330,12 @@ if __name__ == "__main__":
         opt_allocation = ans
           
       
-
-      path = [[], []]
-      overlapped_link = []
-      negative_link = []
-      linkset = []
       N += 1
     
     if N == M+1:
       opt_allocation = 0
       counter += 1
     
-    
-    path = [[], []]
-    overlapped_link = []
-    negative_link = []
-    linkset = []
     
     timer = time.time() - start_time
     print('minimized required spectrum resource is ' + str(int(opt_allocation)))
