@@ -10,10 +10,10 @@ import topology
 
 T = [
 [50,100,200,500,1000,2000], #b
-[1], #M
-[1] #rho
+[2], #M
+[0.5] #rho
 ]
-r = '1'
+r = '05'
 
 b_len = len(T[0])
 #bandwidth requirement
@@ -28,8 +28,8 @@ G = 1
 
 
 #networks topology
-map1 = topology.COST239
-map2 = topology.COST239
+map1 = topology.USbackbone3
+map2 = topology.USbackbone3
 
 g = copy.deepcopy(map1)
 g2 = copy.deepcopy(map2)

@@ -6,30 +6,25 @@ import math
 import copy
 import csv
 import topology
+import time
 
 
-T = [
-[50,100,200,500,1000,2000], #b
-[1], #M
-[1] #rho
-]
-r = '1'
 
-b_len = len(T[0])
+
 #bandwidth requirement
-# b = T[0]
+b = 500
 #number of failures
-M = T[1][0]
+M = 2
 #partial protection requirement
-rho = T[2][0]
-
+rho = 1
+r = '1'
 #guardband
 G = 1
 
 
 #networks topology
-map1 = topology.COST239
-map2 = topology.COST239
+map1 = topology.USbackbone3
+map2 = topology.USbackbone3
 
 g = copy.deepcopy(map1)
 g2 = copy.deepcopy(map2)
@@ -37,22 +32,25 @@ g2 = copy.deepcopy(map2)
 #the number of nodes
 node_num = len(g)
 
-(s,d) = (0,0)
+
 #combination of s and d
 nodes =[a for a in range(node_num)]
-s_d = list(itertools.combinations(nodes,2))
+s = 8
+s_d = []
+for a in range(node_num):
+  if a != s:
+    s_d.append([s,a])
 
 
+#used path and shortestpath with negative arcs
 
 #slot assignment
 
 
-slot_sum = [[0]*b_len for a in range(3)]
-slot_av = []*3
+# slot_sum = [[0]*b_len for a in range(3)]
+# slot_av = []*3
 
 counter = 0
-optim_N = [0 for a in range(b_len)]
-
 
 
 def dijkstra(s,d):
@@ -304,9 +302,9 @@ def assignment(b):
 if __name__ == "__main__":
   for (s,d) in s_d:
     N = M+1 #the number of required disjoint paths
-    Ans = [[math.inf]*b_len for a in range(3)]
+    Ans = [math.inf]*3
     print("(s,d)=",(s,d))
-    
+    start_time = time.time()
     while True:
       hop = []
       eta = []
@@ -331,85 +329,72 @@ if __name__ == "__main__":
       #survive paths
       not_F = list(itertools.combinations(P,(N-M)))
       #proposed
-      for b in T[0]:
-        B_k = []
-        print(b)
-        ans = assignment(b)
-        for a in hop:
-          ans = ans + a*G #add guardband
-      
-        if Ans[0][T[0].index(b)] > ans:
-          Ans[0][T[0].index(b)] = ans
-          
+      B_k = []
+      print(b)
+      ans = assignment(b)
+      for a in hop:
+        ans = ans + a*G #add guardband
+    
+      if Ans[0] > ans:
+        Ans[0] = ans
+        
       #capa balance    
-      for b in T[0]:
-        ans = 0
-        #determine b_k
-        b_k = b / N
-        if b_k * (N-M) < rho*b:
-          b_k = rho*b/(N-M)
-        
-        for a in range(N):
-          ans = ans + hop[a]*(math.ceil(b_k/eta[a]) + G)
-          
-        if Ans[1][T[0].index(b)] > ans:
-          Ans[1][T[0].index(b)] = ans
-
-      #slot balance
-      for b in T[0]:
-        ans = 0
-        
-        #determine B_k
-        B_k =1
-        eta.sort(reverse=True)
-        while True:
-          if B_k*sum(eta) >= b:
-            eta_sum = sum(eta)
-            for a in range(M):
-              eta_sum = eta_sum - eta[a]
-            if B_k*eta_sum <  rho*b:
-              B_k += 1
-            else:
-              break
-          else:
-            B_k += 1
-          
-        for a in range(N):
-          ans = ans + hop[a]*(B_k + G)
-          
-        if Ans[2][T[0].index(b)] > ans:
-          Ans[2][T[0].index(b)] = ans
-          optim_N[T[0].index(b)] = N
+      ans = 0
+      #determine b_k
+      b_k = b / N
+      if b_k * (N-M) < rho*b:
+        b_k = rho*b/(N-M)
       
+      for a in range(N):
+        ans = ans + hop[a]*(math.ceil(b_k/eta[a]) + G)
+        
+      if Ans[1] > ans:
+        Ans[1] = ans
+          
+      #slot balance
+      ans = 0
+      #determine B_k
+      B_k =1
+      eta.sort(reverse=True)
+      while True:
+        if B_k*sum(eta) >= b:
+          eta_sum = sum(eta)
+          for a in range(M):
+            eta_sum = eta_sum - eta[a]
+          if B_k*eta_sum <  rho*b:
+            B_k += 1
+          else:
+            break
+        else:
+          B_k += 1
+          
+      for a in range(N):
+        ans = ans + hop[a]*(B_k + G)
+      if Ans[2] > ans:
+        Ans[2] = ans
+        optim_N = N
 
       N += 1
     
     if N == M+1:
-      Ans = [[0]*b_len]*3
+      Ans = [0]*3
       counter += 1
+    print(Ans)
     
-      
+    print("Solved in %s seconds." % (time.time() - start_time))
     print("optimize solution=", Ans)
-    with open('test.csv','a') as f:
-        writer = csv.writer(f)
-        writer.writerow(Ans)
-    for a in range(b_len):
-      for b in range(3):
-        slot_sum[b][a] = slot_sum[b][a] + Ans[b][a]
-    print("----------------------------------")
-  
-  for a in range(b_len):
-    slot_av = [T[0][a], slot_sum[0][a] / (len(s_d)-counter), slot_sum[1][a] / (len(s_d)-counter), slot_sum[2][a] / (len(s_d)-counter)]
-    print("average=",slot_av)
     
-    if a ==0:
-      with open('result/rho'+r+'_M'+str(M)+'.csv','w') as f:
+    
+    print("----------------------------------")
+    
+    Ans.insert(0,d+1)
+    if d == 0:
+      with open('result/node'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','w') as f:
           writer = csv.writer(f)
-          writer.writerow(slot_av)
+          writer.writerow(Ans)
     else:
-      with open('result/rho'+r+'_M'+str(M)+'.csv','a') as f:
+      with open('result/node'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','a') as f:
           writer = csv.writer(f)
-          writer.writerow(slot_av)
-  print(counter)       
-
+          writer.writerow(Ans)
+  print(counter)
 

@@ -6,54 +6,46 @@ import math
 import copy
 import csv
 import topology
+import time
 
 
-T = [
-[50,100,200,500,1000,2000], #b
-[1], #M
-[1] #rho
-]
-r = '1'
 
-b_len = len(T[0])
+
 #bandwidth requirement
-# b = T[0]
-#number of failures
-M = T[1][0]
-#partial protection requirement
-rho = T[2][0]
+b = 2000
 
+#partial protection requirement
+rho = 1
+r = '1'
+#number of failures
+M = 2
 #guardband
 G = 1
 
 
 #networks topology
-map1 = topology.COST239
-map2 = topology.COST239
+map1_2 = topology.USbackbone3
+#map2 = topology.USbackbone
+
+map1 = topology.USbackbone_hop
+map2 = topology.USbackbone_hop
 
 g = copy.deepcopy(map1)
 g2 = copy.deepcopy(map2)
+G1 = copy.deepcopy(map1_2)
 
 #the number of nodes
 node_num = len(g)
-
-(s,d) = (0,0)
-#combination of s and d
 nodes =[a for a in range(node_num)]
-s_d = list(itertools.combinations(nodes,2))
 
-
+s = 8
+s_d = []
+for a in range(node_num):
+  if a != s:
+    s_d.append([s,a])
+    
 
 #slot assignment
-
-
-slot_sum = [[0]*b_len for a in range(3)]
-slot_av = []*3
-
-counter = 0
-optim_N = [0 for a in range(b_len)]
-
-
 
 def dijkstra(s,d):
   S_bar =[] #list of neighbor nodes
@@ -61,11 +53,11 @@ def dijkstra(s,d):
   
   # step 1
   
-  distance = [math.inf] * node_num #distance of i from s
-  distance[s] = 0 #source node
+  hop_num = [math.inf] * node_num #hop_num of i from s
+  hop_num[s] = 0 #source node
   for index in nodes:
     if g[index][s] > 0:
-      distance[index] = g[index][s]
+      hop_num[index] = g[index][s]
       predecessor[index] = s
       S_bar.append(index)
   
@@ -74,7 +66,7 @@ def dijkstra(s,d):
     
     # step 2
     
-    j = get_j(S_bar,distance)
+    j = get_j(S_bar,hop_num)
     if j == d:
       break
     #print('j =',j)
@@ -87,23 +79,23 @@ def dijkstra(s,d):
     for index in nodes:
       if g[j][index] != 0:
         
-        if distance[j] + g[index][j] < distance[index]:
-          distance[index] = distance[j] + g[j][index]
+        if hop_num[j] + g[index][j] < hop_num[index]:
+          hop_num[index] = hop_num[j] + g[j][index]
           predecessor[index] = j
           
           if (index in S_bar) == False:
 
             S_bar.append(index)
     
-  return distance,predecessor
+  return hop_num,predecessor
     
 
-def get_j(S_bar,distance):
+def get_j(S_bar,hop_num):
   min_dis = math.inf
   min_i = d
   for index in S_bar:
-    if min_dis > distance[index]:
-      min_dis = distance[index]
+    if min_dis > hop_num[index]:
+      min_dis = hop_num[index]
       min_i = index
   return min_i
   
@@ -128,7 +120,7 @@ def Bhandari():
   
   #first dijkstra
   
-  distance,predecessor = dijkstra(s,d)
+  hop_num,predecessor = dijkstra(s,d)
   # print(predecessor)
   p = d
   while p != None:
@@ -144,7 +136,7 @@ def Bhandari():
   
   count = 1
   while count < N: 
-    distance,predecessor = dijkstra(s,d)
+    hop_num,predecessor = dijkstra(s,d)
     # print(predecessor)
     p = d
     while p != None:
@@ -157,7 +149,7 @@ def Bhandari():
           g[pre][p] = g2[pre][p]
           g[p][pre] = g2[p][pre]
         
-        #make the length of each edges negative and print the path and the distance
+        #make the length of each edges negative and print the path and the hop_num
         
         else:
           g[p][pre] = - g[p][pre]
@@ -183,10 +175,10 @@ def Bhandari():
   
   for a in range(N):
     
-    distance,predecessor = dijkstra(s,d)
-    # print('distance = ',distance)
+    hop_num,predecessor = dijkstra(s,d)
+    # print('hop_num = ',hop_num)
     hop_count = 0
-    
+    distance = 0
     p = d
     # print(predecessor)
     while p != None:
@@ -197,6 +189,7 @@ def Bhandari():
         
         print(str(p) + " <- ", end='')
         hop_count += 1
+        distance += G1[pre][p]
       else:
         print(str(p))
         
@@ -206,7 +199,7 @@ def Bhandari():
     #print(g)
     hop.append(hop_count)
     
-    eta.append(modulation_decision(distance[d]))
+    eta.append(modulation_decision(distance))
 
 
 
@@ -304,9 +297,9 @@ def assignment(b):
 if __name__ == "__main__":
   for (s,d) in s_d:
     N = M+1 #the number of required disjoint paths
-    Ans = [[math.inf]*b_len for a in range(3)]
+    opt_allocation = math.inf
     print("(s,d)=",(s,d))
-    
+    start_time = time.time()
     while True:
       hop = []
       eta = []
@@ -317,6 +310,7 @@ if __name__ == "__main__":
       
       g = copy.deepcopy(map1)
       g2 = copy.deepcopy(map2)
+      G1 = copy.deepcopy(map1_2)
 
       if 0 in hop:
         break
@@ -331,85 +325,32 @@ if __name__ == "__main__":
       #survive paths
       not_F = list(itertools.combinations(P,(N-M)))
       #proposed
-      for b in T[0]:
-        B_k = []
-        print(b)
-        ans = assignment(b)
-        for a in hop:
-          ans = ans + a*G #add guardband
+      B_k = []
+      print(b)
+      ans = assignment(b)
+      for a in hop:
+        ans = ans + a*G #add guardband
+    
+      if opt_allocation > ans:
+        opt_allocation = ans
+          
       
-        if Ans[0][T[0].index(b)] > ans:
-          Ans[0][T[0].index(b)] = ans
-          
-      #capa balance    
-      for b in T[0]:
-        ans = 0
-        #determine b_k
-        b_k = b / N
-        if b_k * (N-M) < rho*b:
-          b_k = rho*b/(N-M)
-        
-        for a in range(N):
-          ans = ans + hop[a]*(math.ceil(b_k/eta[a]) + G)
-          
-        if Ans[1][T[0].index(b)] > ans:
-          Ans[1][T[0].index(b)] = ans
-
-      #slot balance
-      for b in T[0]:
-        ans = 0
-        
-        #determine B_k
-        B_k =1
-        eta.sort(reverse=True)
-        while True:
-          if B_k*sum(eta) >= b:
-            eta_sum = sum(eta)
-            for a in range(M):
-              eta_sum = eta_sum - eta[a]
-            if B_k*eta_sum <  rho*b:
-              B_k += 1
-            else:
-              break
-          else:
-            B_k += 1
-          
-        for a in range(N):
-          ans = ans + hop[a]*(B_k + G)
-          
-        if Ans[2][T[0].index(b)] > ans:
-          Ans[2][T[0].index(b)] = ans
-          optim_N[T[0].index(b)] = N
-      
-
       N += 1
     
     if N == M+1:
-      Ans = [[0]*b_len]*3
-      counter += 1
+      opt_allocation = 0
     
-      
-    print("optimize solution=", Ans)
-    with open('test.csv','a') as f:
-        writer = csv.writer(f)
-        writer.writerow(Ans)
-    for a in range(b_len):
-      for b in range(3):
-        slot_sum[b][a] = slot_sum[b][a] + Ans[b][a]
-    print("----------------------------------")
-  
-  for a in range(b_len):
-    slot_av = [T[0][a], slot_sum[0][a] / (len(s_d)-counter), slot_sum[1][a] / (len(s_d)-counter), slot_sum[2][a] / (len(s_d)-counter)]
-    print("average=",slot_av)
     
-    if a ==0:
-      with open('result/rho'+r+'_M'+str(M)+'.csv','w') as f:
+    timer = time.time() - start_time
+    print('minimized required spectrum resource is ' + str(int(opt_allocation)))
+    Ans = [d+1,opt_allocation,timer]
+    if d == 0:
+      with open('result/fsa_hop'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','w') as f:
           writer = csv.writer(f)
-          writer.writerow(slot_av)
+          writer.writerow(Ans)
     else:
-      with open('result/rho'+r+'_M'+str(M)+'.csv','a') as f:
+      with open('result/fsa_hop'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','a') as f:
           writer = csv.writer(f)
-          writer.writerow(slot_av)
-  print(counter)       
+          writer.writerow(Ans)
 
 

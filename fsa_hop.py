@@ -18,7 +18,7 @@ b = 2000
 rho = 0.5
 r = '05'
 #number of failures
-M = 2
+M = 1
 #guardband
 G = 1
 
@@ -77,7 +77,7 @@ def dijkstra(s,d):
           hop_num[index] = hop_num[j] + g[j][index]
           predecessor[index] = j
           
-          if (j in S_bar) == False:
+          if (index in S_bar) == False:
 
             S_bar.append(index)
     

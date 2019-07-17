@@ -61,7 +61,7 @@ def dijkstra(g,s,d):
         if distance[j] + g[index][j] < distance[index]:
           distance[index] = distance[j] + g[j][index]
           predecessor[index] = j
-          if (j in S_bar) == False:
+          if (index in S_bar) == False:
             print(S_bar)
             S_bar.append(index)
             print(S_bar)

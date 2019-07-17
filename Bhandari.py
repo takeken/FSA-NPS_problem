@@ -8,10 +8,10 @@ import topology
 
 #networks topology
 
-map1 = topology.COST239
+map1 = topology.USbackbone
 
 #topology's copy
-map2 = topology.COST239
+map2 = topology.USbackbone
 
 
 g = copy.deepcopy(map1)
@@ -24,7 +24,7 @@ node_num = len(map1)
 
 nodes =[a for a in range(node_num)]
 s_d = list(itertools.combinations(nodes,2))
-s_d = [(0,9)]
+s_d = [(8,22)]
 
 
 
@@ -41,18 +41,21 @@ def dijkstra(s,d):
       distance[index] = g[index][s]
       predecessor[index] = s
       S_bar.append(index)
-  
+  print(S_bar)
   while True:
     
     
     # step 2
     
     j = get_j(S_bar,distance)
+    if j == None:
+      print('Not found')
+      j = d
     if j == d:
       break
-    #print('j =',j)
+    print('j =',j)
     S_bar.remove(j)
-    
+    print(S_bar)
     
     
     # step 3
@@ -63,17 +66,18 @@ def dijkstra(s,d):
         if distance[j] + g[index][j] < distance[index]:
           distance[index] = distance[j] + g[j][index]
           predecessor[index] = j
-          
-          if (j in S_bar) == False:
-
+          if (index in S_bar) == False:
+            print('reseach again')
+            print('i=',index)
             S_bar.append(index)
+            print(S_bar)
     
   return distance,predecessor
     
 
 def get_j(S_bar,distance):
   min_dis = math.inf
-  min_i = d
+  min_i = None
   for index in S_bar:
     if min_dis > distance[index]:
       min_dis = distance[index]
@@ -110,14 +114,17 @@ def Bhandari(s,d):
       g[p][pre] = - g[p][pre]
       g[pre][p] = 0
     p = pre
-    
+  
   
   #N-1 times dijkstra for the topology including negative arcs
   
   
   count = 1
-  while count < N: 
+  while count < N:
+    print('N=',count)
     distance,predecessor = dijkstra(s,d)
+    print(distance)
+    print(g)
     # print(predecessor)
     p = d
     while p != None:
@@ -130,17 +137,19 @@ def Bhandari(s,d):
           g[pre][p] = g2[pre][p]
           g[p][pre] = g2[p][pre]
         
-        #make the length of each edges negative and print the path and the distance
+        #make the length of each edges negative
         
         else:
           g[p][pre] = - g[p][pre]
           g[pre][p] = 0
       p = pre
+    
 
     count += 1
   
   
   #replace links we should use (negative arcs will be used)
+  print(g)
   for i in nodes:
     for j in nodes:
       if g[i][j] > 0:
@@ -168,15 +177,15 @@ def Bhandari(s,d):
         g[p][pre] = 0
         g[pre][p] = 0
         
-        print(str(p) + " <- ", end='')
+        print(str(p+1) + " <- ", end='')
         hop_count += 1
       else:
-        print(str(p))
+        print(str(p+1))
         
         
       p = pre
       
-    #print(g)
+    # print(g)
     hop.append(hop_count)
     
     eta.append(modulation_decision(distance[d]))
@@ -189,14 +198,13 @@ def Bhandari(s,d):
 if __name__ == "__main__":
   for (s,d) in s_d:
     
-    print("(s,d)=", (s,d))
-    N = 2
+    print("(s,d)=", (s+1,d+1))
+    N = 3
     while True:
       
       hop = []
       eta = []
       Bhandari(s,d)
-      
       g = copy.deepcopy(map1)
       g2 = copy.deepcopy(map2)
       

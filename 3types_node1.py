@@ -88,7 +88,7 @@ def dijkstra(s,d):
           distance[index] = distance[j] + g[j][index]
           predecessor[index] = j
           
-          if (j in S_bar) == False:
+          if (index in S_bar) == False:
 
             S_bar.append(index)
     
