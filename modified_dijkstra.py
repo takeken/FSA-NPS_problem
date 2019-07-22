@@ -58,7 +58,7 @@ def dijkstra(g,s,d):
     for index in range(node_num):
       if g[j][index] != 0:
         print('distance = ',distance)
-        if distance[j] + g[index][j] < distance[index]:
+        if distance[j] + g[j][index] < distance[index]:
           distance[index] = distance[j] + g[j][index]
           predecessor[index] = j
           if (index in S_bar) == False:

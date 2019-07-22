@@ -10,10 +10,10 @@ import topology
 
 T = [
 [50,100,200,500,1000,2000], #b
-[1], #M
-[1] #rho
+[2], #M
+[0.5] #rho
 ]
-r = '1'
+r = '05'
 
 b_len = len(T[0])
 #bandwidth requirement
@@ -87,7 +87,7 @@ def dijkstra(s,d):
     for index in nodes:
       if g[j][index] != 0:
         
-        if distance[j] + g[index][j] < distance[index]:
+        if distance[j] + g[j][index] < distance[index]:
           distance[index] = distance[j] + g[j][index]
           predecessor[index] = j
           

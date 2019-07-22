@@ -24,11 +24,11 @@ G = 1
 
 
 #networks topology
-map1_2 = topology.USbackbone3
+map1_2 = topology.jpn48
 #map2 = topology.USbackbone
 
-map1 = topology.USbackbone_hop
-map2 = topology.USbackbone_hop
+map1 = topology.jpn48_hop
+map2 = topology.jpn48_hop
 
 g = copy.deepcopy(map1)
 g2 = copy.deepcopy(map2)
@@ -79,7 +79,7 @@ def dijkstra(s,d):
     for index in nodes:
       if g[j][index] != 0:
         
-        if hop_num[j] + g[index][j] < hop_num[index]:
+        if hop_num[j] + g[j][index] < hop_num[index]:
           hop_num[index] = hop_num[j] + g[j][index]
           predecessor[index] = j
           

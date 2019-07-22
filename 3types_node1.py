@@ -14,10 +14,10 @@ import time
 #bandwidth requirement
 b = 2000
 #number of failures
-M = 2
+M = 1
 #partial protection requirement
-rho = 0.5
-r = '05'
+rho = 1
+r = '1'
 #guardband
 G = 1
 
@@ -84,7 +84,7 @@ def dijkstra(s,d):
     for index in nodes:
       if g[j][index] != 0:
         
-        if distance[j] + g[index][j] < distance[index]:
+        if distance[j] + g[j][index] < distance[index]:
           distance[index] = distance[j] + g[j][index]
           predecessor[index] = j
           

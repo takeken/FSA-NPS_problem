@@ -18,7 +18,7 @@ b = 2000
 rho = 0.5
 r = '05'
 #number of failures
-M = 1
+M = 2
 #guardband
 G = 1
 
@@ -73,7 +73,7 @@ def dijkstra(s,d):
     for index in nodes:
       if g[j][index] != 0:
         
-        if hop_num[j] + g[index][j] < hop_num[index]:
+        if hop_num[j] + g[j][index] < hop_num[index]:
           hop_num[index] = hop_num[j] + g[j][index]
           predecessor[index] = j
           

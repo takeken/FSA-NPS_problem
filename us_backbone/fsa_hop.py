@@ -18,7 +18,7 @@ b = 2000
 rho = 1
 r = '1'
 #number of failures
-M = 2
+M = 1
 #guardband
 G = 1
 
@@ -38,7 +38,7 @@ G1 = copy.deepcopy(map1_2)
 node_num = len(g)
 nodes =[a for a in range(node_num)]
 
-s = 8
+s = 1
 s_d = []
 for a in range(node_num):
   if a != s:
@@ -79,7 +79,7 @@ def dijkstra(s,d):
     for index in nodes:
       if g[j][index] != 0:
         
-        if hop_num[j] + g[index][j] < hop_num[index]:
+        if hop_num[j] + g[j][index] < hop_num[index]:
           hop_num[index] = hop_num[j] + g[j][index]
           predecessor[index] = j
           

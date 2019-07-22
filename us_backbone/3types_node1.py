@@ -12,9 +12,9 @@ import time
 
 
 #bandwidth requirement
-b = 500
+b = 2000
 #number of failures
-M = 2
+M = 1
 #partial protection requirement
 rho = 1
 r = '1'
@@ -85,7 +85,7 @@ def dijkstra(s,d):
     for index in nodes:
       if g[j][index] != 0:
         
-        if distance[j] + g[index][j] < distance[index]:
+        if distance[j] + g[j][index] < distance[index]:
           distance[index] = distance[j] + g[j][index]
           predecessor[index] = j
           
@@ -300,101 +300,107 @@ def assignment(b):
 
 
 if __name__ == "__main__":
-  for (s,d) in s_d:
-    N = M+1 #the number of required disjoint paths
-    Ans = [math.inf]*3
-    print("(s,d)=",(s,d))
-    start_time = time.time()
-    while True:
-      hop = []
-      eta = []
-      #variables
-      #the number of slots of k-th path
-      
-      Bhandari()
-      
-      g = copy.deepcopy(map1)
-      g2 = copy.deepcopy(map2)
-
-      if 0 in hop:
-        break
-      
-      print(str(N)+"本")
-      print(hop,eta)
+  for source_node in range(1, node_num):
+    s_d = []
+    for a in range(node_num):
+      if a != source_node:
+        s_d.append([source_node,a])
     
-    
-      #set of paths
-      P =[a for a in range(N)]
-      
-      #survive paths
-      not_F = list(itertools.combinations(P,(N-M)))
-      #proposed
-      B_k = []
-      print(b)
-      ans = assignment(b)
-      for a in hop:
-        ans = ans + a*G #add guardband
-    
-      if Ans[0] > ans:
-        Ans[0] = ans
-        
-      #capa balance    
-      ans = 0
-      #determine b_k
-      b_k = b / N
-      if b_k * (N-M) < rho*b:
-        b_k = rho*b/(N-M)
-      
-      for a in range(N):
-        ans = ans + hop[a]*(math.ceil(b_k/eta[a]) + G)
-        
-      if Ans[1] > ans:
-        Ans[1] = ans
-          
-      #slot balance
-      ans = 0
-      #determine B_k
-      B_k =1
-      eta.sort(reverse=True)
+    for (s,d) in s_d:
+      N = M+1 #the number of required disjoint paths
+      Ans = [math.inf]*3
+      print("(s,d)=",(s+1,d+1))
+      start_time = time.time()
       while True:
-        if B_k*sum(eta) >= b:
-          eta_sum = sum(eta)
-          for a in range(M):
-            eta_sum = eta_sum - eta[a]
-          if B_k*eta_sum <  rho*b:
-            B_k += 1
-          else:
-            break
-        else:
-          B_k += 1
-          
-      for a in range(N):
-        ans = ans + hop[a]*(B_k + G)
-      if Ans[2] > ans:
-        Ans[2] = ans
-        optim_N = N
+        hop = []
+        eta = []
+        #variables
+        #the number of slots of k-th path
+        
+        Bhandari()
+        
+        g = copy.deepcopy(map1)
+        g2 = copy.deepcopy(map2)
 
-      N += 1
-    
-    if N == M+1:
-      Ans = [0]*3
-      counter += 1
-    print(Ans)
-    
-    print("Solved in %s seconds." % (time.time() - start_time))
-    print("optimize solution=", Ans)
-    
-    
-    print("----------------------------------")
-    
-    Ans.insert(0,d+1)
-    if d == 0:
-      with open('result/node'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','w') as f:
-          writer = csv.writer(f)
-          writer.writerow(Ans)
-    else:
-      with open('result/node'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','a') as f:
-          writer = csv.writer(f)
-          writer.writerow(Ans)
-  print(counter)
+        if 0 in hop:
+          break
+        
+        print(str(N)+"本")
+        print(hop,eta)
+      
+      
+        #set of paths
+        P =[a for a in range(N)]
+        
+        #survive paths
+        not_F = list(itertools.combinations(P,(N-M)))
+        #proposed
+        B_k = []
+        print(b)
+        ans = assignment(b)
+        for a in hop:
+          ans = ans + a*G #add guardband
+      
+        if Ans[0] > ans:
+          Ans[0] = ans
+          
+        #capa balance    
+        ans = 0
+        #determine b_k
+        b_k = b / N
+        if b_k * (N-M) < rho*b:
+          b_k = rho*b/(N-M)
+        
+        for a in range(N):
+          ans = ans + hop[a]*(math.ceil(b_k/eta[a]) + G)
+          
+        if Ans[1] > ans:
+          Ans[1] = ans
+            
+        #slot balance
+        ans = 0
+        #determine B_k
+        B_k =1
+        eta.sort(reverse=True)
+        while True:
+          if B_k*sum(eta) >= b:
+            eta_sum = sum(eta)
+            for a in range(M):
+              eta_sum = eta_sum - eta[a]
+            if B_k*eta_sum <  rho*b:
+              B_k += 1
+            else:
+              break
+          else:
+            B_k += 1
+            
+        for a in range(N):
+          ans = ans + hop[a]*(B_k + G)
+        if Ans[2] > ans:
+          Ans[2] = ans
+          optim_N = N
+
+        N += 1
+      
+      if N == M+1:
+        Ans = [0]*3
+        counter += 1
+      print(Ans)
+      
+      print("Solved in %s seconds." % (time.time() - start_time))
+      print("optimize solution=", Ans)
+      
+      
+      print("----------------------------------")
+      
+      Ans.insert(0,d+1)
+      if d == 0:
+        with open('result/node'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','w') as f:
+            writer = csv.writer(f)
+            writer.writerow(Ans)
+      else:
+        with open('result/node'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','a') as f:
+            writer = csv.writer(f)
+            writer.writerow(Ans)
+    print(counter)
 
