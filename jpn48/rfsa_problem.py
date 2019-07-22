@@ -12,7 +12,7 @@ import pulp
 from pulp import CPLEX_CMD
 
 # グラフの定義
-g = topology.COST239
+g = topology.USbackbone
 g_length = len(g)
 V = [a for a in range(g_length)] #ノードの集合
 E = [] #リンクの集合
@@ -20,15 +20,13 @@ for i in V:
     for j in range(g_length):
         if g[i][j]  >0:
             E.append((i,j))
-
-node_num = len(g)
 #要求の設定
-s = 0
+s = 5
 s_d = []
 for a in range(node_num):
   if a != s:
     s_d.append([s,a])
-
+    
 b = 2000 #要求伝送容量
 rho = 0.5 #partial protection requirement
 r = '05'
@@ -155,7 +153,7 @@ if __name__ == "__main__":
     
     
     Ans = [d+1,opt_allocation,timer]
-    if d == 1:
+    if d == 0:
       with open('result/rfsa'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','w') as f:
           writer = csv.writer(f)
           writer.writerow(Ans)
