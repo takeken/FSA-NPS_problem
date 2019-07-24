@@ -151,7 +151,9 @@ if __name__ == "__main__":
         if opt_allocation > total_slots:
           opt_allocation = total_slots
     timer = time.time() - start_time
-    print('minimized required spectrum resource is ' + str(int(opt_allocation)))
+    if opt_allocation == math.inf:
+      opt_allocation = 0
+      print('minimized required spectrum resource is ' + str(int(opt_allocation)))
     
     
     Ans = [d+1,opt_allocation,timer]

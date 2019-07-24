@@ -10,10 +10,10 @@ import topology
 
 T = [
 [50,100,200,500,1000,2000], #b
-[2], #M
-[0.5] #rho
+[1], #M
+[1] #rho
 ]
-r = '05'
+r = '1'
 
 b_len = len(T[0])
 #bandwidth requirement

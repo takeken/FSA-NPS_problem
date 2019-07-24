@@ -16,8 +16,8 @@ b = 2000
 #number of failures
 M = 1
 #partial protection requirement
-rho = 1
-r = '1'
+rho = 0.5
+r = '05'
 #guardband
 G = 1
 
