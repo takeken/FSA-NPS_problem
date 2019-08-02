@@ -13,10 +13,12 @@ import time
 #bandwidth requirement
 b = 2000
 #number of failures
-M = 1
+M = input('M=')
+M = int(M)
 #partial protection requirement
-rho = 1
-r = '1'
+rho = input('rho = ')
+rho = float(rho)
+r = input('r is ')
 #guardband
 G = 1
 

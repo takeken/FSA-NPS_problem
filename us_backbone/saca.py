@@ -24,8 +24,8 @@ G = 1
 
 
 #networks topology
-map1 = topology.COST239
-map2 = topology.COST239
+map1 = topology.USbackbone3
+map2 = topology.USbackbone3
 
 g = copy.deepcopy(map1)
 g2 = copy.deepcopy(map2)
@@ -36,9 +36,11 @@ node_num = len(g)
 
 #combination of s and d
 nodes =[a for a in range(node_num)]
+s = 2
 s_d = []
-for a in range(1,node_num):
-  s_d.append([0,a])
+for a in range(node_num):
+  if a != s:
+    s_d.append([s,a])
 
 
 
@@ -271,7 +273,7 @@ if __name__ == "__main__":
     print("----------------------------------")
     
     Ans = [d+1,opt_allocation,timer]
-    if d == 1:
+    if d == 0:
       with open('result/saca'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','w') as f:
           writer = csv.writer(f)
           writer.writerow(Ans)

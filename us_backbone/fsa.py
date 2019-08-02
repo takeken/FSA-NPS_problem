@@ -1,4 +1,5 @@
 from __future__ import print_function
+import cplex
 import sys
 import itertools
 import math
@@ -12,6 +13,7 @@ import time
 
 #bandwidth requirement
 b = 2000
+
 #number of failures
 M = input('M=')
 M = int(M)
@@ -24,8 +26,8 @@ G = 1
 
 
 #networks topology
-map1 = topology.COST239
-map2 = topology.COST239
+map1 = topology.USbackbone3
+map2 = topology.USbackbone3
 
 g = copy.deepcopy(map1)
 g2 = copy.deepcopy(map2)
@@ -36,10 +38,23 @@ node_num = len(g)
 
 #combination of s and d
 nodes =[a for a in range(node_num)]
+s = 2
 s_d = []
-for a in range(1,node_num):
-  s_d.append([0,a])
+for a in range(node_num):
+  if a != s:
+    s_d.append([s,a])
 
+
+
+#used path and shortestpath with negative arcs
+
+#slot assignment
+
+
+# slot_sum = [[0]*b_len for a in range(3)]
+# slot_av = []*3
+
+counter = 0
 
 
 def dijkstra(s,d):
@@ -198,6 +213,96 @@ def Bhandari():
 
 
 
+#############
+def setupproblem(c,b):
+  
+  c.objective.set_sense(c.objective.sense.minimize)
+  
+  # assignment variables:B_k
+
+  for a in range(N):
+    varname = "B_" + str(a)
+
+    B_k.append(varname)
+
+
+
+
+
+###############
+
+
+  #objective
+  
+  c.variables.add(names=B_k,
+                  lb=[1]*len(B_k),
+                  ub=[320]*len(B_k),
+                  types=["I"]*len(B_k),
+                  obj = hop)
+
+
+#constraints
+
+  #\sum_{k in K}\eta_k*B_k >= b
+  thevars = []
+  thecoefs = []
+  for a in P:
+    thevars.append(B_k[a])
+    thecoefs.append(eta[a])
+    
+  c.linear_constraints.add(lin_expr=[cplex.SparsePair(thevars, thecoefs)],
+                           senses=["G"],
+                           rhs=[b])
+    
+  #\sum _{k\in K:k\not\in F}eta_k*B_k >= rho*b
+  for not_f in not_F:
+    thevars = []
+    thecoefs = []
+    for a in list(not_f):
+      thevars.append(B_k[a])
+      thecoefs.append(eta[a])
+      
+    c.linear_constraints.add(lin_expr=[cplex.SparsePair(thevars, thecoefs)],
+                             senses=["G"],
+                             rhs=[rho*b])
+   
+   
+   
+   
+#########
+
+
+def assignment(b):
+  
+  c = cplex.Cplex()
+  
+  setupproblem(c,b)
+  
+  #c.write("MPP.lp")
+  
+  c.solve()
+  
+  
+  sol = c.solution
+  
+  print()
+  
+  if sol.is_primal_feasible():
+    ans = int(sol.get_objective_value())
+    print(ans)
+  
+    print("B_k = {0}" .format(
+      sol.get_values(B_k)))
+  
+    print()
+  
+  
+  else:
+    print("No solution available.")
+  
+  return ans
+
+
 if __name__ == "__main__":
   for (s,d) in s_d:
     N = M+1 #the number of required disjoint paths
@@ -222,42 +327,22 @@ if __name__ == "__main__":
       print(hop,eta)
     
     
-      #capa balance    
-      ans = 0
-      #determine b_k
-      b_k = b / N
-      if b_k * (N-M) < rho*b:
-        b_k = rho*b/(N-M)
+      #set of paths
+      P =[a for a in range(N)]
       
-      for a in range(N):
-        ans = ans + hop[a]*(math.ceil(b_k/eta[a]) + G)
+      #survive paths
+      not_F = list(itertools.combinations(P,(N-M)))
+      #proposed
+      B_k = []
+      print(b)
+      ans = assignment(b)
+      for a in hop:
+        ans = ans + a*G #add guardband
+    
+      if opt_allocation > ans:
+        opt_allocation = ans
         
-      if opt_allocation > ans:
-        opt_allocation = ans
-          
-      #slot balance
-      ans = 0
-      #determine B_k
-      B_k =1
-      eta.sort(reverse=True)
-      while True:
-        if B_k*sum(eta) >= b:
-          eta_sum = sum(eta)
-          for a in range(M):
-            eta_sum = eta_sum - eta[a]
-          if B_k*eta_sum <  rho*b:
-            B_k += 1
-          else:
-            break
-        else:
-          B_k += 1
-          
-      for a in range(N):
-        ans = ans + hop[a]*(B_k + G)
-      if opt_allocation > ans:
-        opt_allocation = ans
-        optim_N = N
-
+      
       N += 1
     
     if N == M+1:
@@ -267,17 +352,16 @@ if __name__ == "__main__":
     print("Solved in %s seconds." % timer)
     print("optimize solution=" + str(int(opt_allocation)))
     
-    
     print("----------------------------------")
     
     Ans = [d+1,opt_allocation,timer]
-    if d == 1:
-      with open('result/saca'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','w') as f:
+    if d == 0:
+      with open('result/fsa'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','w') as f:
           writer = csv.writer(f)
           writer.writerow(Ans)
     else:
-      with open('result/saca'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','a') as f:
+      with open('result/fsa'+str(s+1)+'_b'+str(b)+'_rho'+r+'_M'+str(M)+'.csv','a') as f:
           writer = csv.writer(f)
           writer.writerow(Ans)
-
+  print(counter)
 

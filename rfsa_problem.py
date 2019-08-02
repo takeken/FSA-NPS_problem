@@ -12,16 +12,16 @@ import pulp
 from pulp import CPLEX_CMD
 
 # グラフの定義
-g = topology.COST239
-g_length = len(g)
+g_orgin = topology.COST239
+g_length = len(g_orgin)
 V = [a for a in range(g_length)] #ノードの集合
 E = [] #リンクの集合
 for i in V:
-    for j in range(g_length):
-        if g[i][j]  >0:
-            E.append((i,j))
+  for j in range(g_length):
+    if g_orgin[i][j]  >0:
+      E.append((i,j))
 
-node_num = len(g)
+node_num = len(g_orgin)
 #要求の設定
 s = 0
 s_d = []
@@ -30,9 +30,13 @@ for a in range(node_num):
     s_d.append([s,a])
 
 b = 2000 #要求伝送容量
-rho = 0.5 #partial protection requirement
-r = '05'
-M = 1 # 耐えうるパスの故障本数
+#number of failures
+M = input('M=')
+M = int(M)
+#partial protection requirement
+rho = input('rho = ')
+rho = float(rho)
+r = input('r is ')
 G = 1 # ガードバンドに必要なスロット数
 
 
@@ -43,6 +47,17 @@ e_c = [62.5,50,37.5,25,12.5] # 変調効率
 
 
 alpha = 320
+
+
+#for bhandari's alg.
+map1 = topology.COST239
+map2 = topology.COST239
+
+g = copy.deepcopy(map1)
+g2 = copy.deepcopy(map2)
+
+nodes =[a for a in range(node_num)]
+
 
 
 def fbar_set(K,N,M):
@@ -132,28 +147,145 @@ def rfsa_problem(N):
   return total_slots
 
 
+def dijkstra(s,d):
+  S_bar =[] #list of neighbor nodes
+  predecessor = [None] * node_num
+  
+  
+  # step 1
+  
+  distance = [math.inf] * node_num #distance of i from s
+  distance[s] = 0 #source node
+  for index in nodes:
+    if g[index][s] > 0:
+      distance[index] = g[index][s]
+      predecessor[index] = s
+      S_bar.append(index)
+  # print(S_bar)
+  while True:
+    
+    
+    # step 2
+    
+    j = get_j(S_bar,distance)
+    if j == None:
+      print('Not found')
+      
+      break
+      
+    if j == d:
+      print('get path')
+      break
+    
+    S_bar.remove(j)
+    # print(S_bar)
+    
+    
+    # step 3
+    # print(g[j])
+    for index in nodes:
+      if g[j][index] != 0:
+        # print(distance[index],distance[j],g[])
+        if distance[j] + g[j][index] < distance[index]:
+          distance[index] = distance[j] + g[j][index]
+          predecessor[index] = j
+          if (index in S_bar) == False: # if 
+            # print('reseach it')
+            # print('i=',index+1)
+            S_bar.append(index)
+    
+  return distance,predecessor
+    
+
+def get_j(S_bar,distance):
+  min_dis = math.inf
+  min_i = None
+  for index in S_bar:
+    if min_dis > distance[index]:
+      min_dis = distance[index]
+      min_i = index
+  return min_i
+  
+
+
+#Bhandari
+def Bhandari(s,d):
+  
+  #first dijkstra
+  
+  distance,predecessor = dijkstra(s,d)
+  # print(predecessor)
+  p = d
+  while p != None:
+    pre = predecessor[p]
+    if p != s:
+      g[p][pre] = - g[p][pre]
+      g[pre][p] = 0
+    p = pre
+  
+  
+  #N-1 times dijkstra for the topology including negative arcs
+  
+  
+  count = 1
+  while True:
+    distance,predecessor = dijkstra(s,d)
+    print(distance)
+    if distance[d] == math.inf:
+      break
+    # print(distance)
+    # print(g)
+    # print(predecessor)
+    p = d
+    while p != None:
+      pre = predecessor[p]
+      if p != s and pre != None:
+        
+        #replace the overlapping links with the original links
+        
+        if g[pre][p] < 0:
+          g[pre][p] = g2[pre][p]
+          g[p][pre] = g2[p][pre]
+        
+        #make the length of each edges negative
+        
+        else:
+          g[p][pre] = - g[p][pre]
+          g[pre][p] = 0
+      p = pre
+    
+
+    count += 1
+  return count
+
 
 
 if __name__ == "__main__":
   for d in range(1,g_length):
-    print('(s,d) = ',(s,d))
+    print('(s,d) = ',(s+1,d+1))
     opt_allocation = math.inf
     
     start_time = time.time()
+    
+    max_path_num = Bhandari(s,d)
     N = M # M+1本からスタート
     while True:
       N += 1
-      
-      total_slots = rfsa_problem(N)
-      if total_slots == None:
+      if max_path_num < N:
+        print('There is no %s paths' % N)
         break
+      # total_slots = rfsa_problem(N)
+      # elif total_slots == None:
+      #   break
       else:
+        print(str(N)+"本")
+        total_slots = rfsa_problem(N)
         if opt_allocation > total_slots:
           opt_allocation = total_slots
     timer = time.time() - start_time
     if opt_allocation == math.inf:
       opt_allocation = 0
-      print('minimized required spectrum resource is ' + str(int(opt_allocation)))
+    print('minimized required spectrum resource is ' + str(int(opt_allocation)))
     
     
     Ans = [d+1,opt_allocation,timer]
